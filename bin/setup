@@ -8,6 +8,25 @@ def system!(*args)
   system(*args, exception: true)
 end
 
+# Function to check if PostgreSQL is running on the default port
+def check_postgresql
+  if system('which psql > /dev/null 2>&1')
+    # psql command is available, proceed with the check
+    unless system('nc -zv localhost 5432 > /dev/null 2>&1')
+      abort "Error: PostgreSQL is not running on the default port or is not accessible."
+    end
+  else
+    # psql command is not available
+    abort "Error: PostgreSQL client (psql) is not installed."
+  end
+end
+
+def check_redis
+  unless system('redis-cli ping > /dev/null 2>&1')
+    abort "Error: Redis is not running."
+  end
+end
+
 FileUtils.chdir APP_ROOT do
   # This script is a way to set up or update your development environment automatically.
   # This script is idempotent, so that you can run it at any time and get an expectable outcome.
@@ -17,7 +36,13 @@ FileUtils.chdir APP_ROOT do
   system! "gem install bundler --conservative"
   system("bundle check") || system!("bundle install")
 
-  puts "\n== Preparing database =="
+  puts "\n== Checking PostgreSQL availability =="
+  check_postgresql
+
+  puts "\n== Checking Redis availability =="
+  check_redis
+
+  puts "\n== Preparing database with user rails =="
   system! "bin/rails db:prepare"
 
   puts "\n== Removing old logs and tempfiles =="

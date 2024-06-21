@@ -17,6 +17,10 @@ gem 'bootsnap', '>= 1.4.4', require: false
 group :development, :test do
   gem 'byebug', '~> 11.1', '>= 11.1.3'
   gem 'pry', '~> 0.14.1'
+
+  gem 'database_cleaner-active_record', '~> 2.1'
+  gem 'rspec-rails', '~> 6.1', '>= 6.1.3'
+  gem 'shoulda-matchers', '~> 6.2'
 end
 
 group :development do

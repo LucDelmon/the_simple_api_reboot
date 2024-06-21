@@ -7,8 +7,8 @@ ruby '3.3.0'
 gem 'rails', '~> 7.1', '>= 7.1.3.2'
 
 # Use Puma as the app server
-gem 'puma', '~> 6.4', '>= 6.4.2'
 gem 'pg', '~> 1.5', '>= 1.5.6'
+gem 'puma', '~> 6.4', '>= 6.4.2'
 gem 'redis', '~> 5.2'
 
 # Reduces boot times through caching; required in config/boot.rb
@@ -20,6 +20,10 @@ group :development, :test do
 
   gem 'database_cleaner-active_record', '~> 2.1'
   gem 'rspec-rails', '~> 6.1', '>= 6.1.3'
+  gem 'rubocop', '~> 1.64', '>= 1.64.1'
+  gem 'rubocop-performance', '~> 1.20', '>= 1.20.2'
+  gem 'rubocop-rails', '~> 2.25'
+  gem 'rubocop-rspec', '~> 2.22'
   gem 'shoulda-matchers', '~> 6.2'
 end
 

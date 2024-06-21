@@ -4,29 +4,19 @@ default: &default
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  redis:
+    # For a custom redis port or server, change the url string.
+    url: <%= "redis://localhost:6379/1" %>
 
 development:
   <<: *default
+
+  # The database url connection string, the user is rails and the password is stored in the credentials file. The user probably does not exist yet, so you will need to create it.
+  # To create additional roles in postgres see `$ createuser --help`.
   url: <%= "postgresql://rails:#{Rails.application.credentials.dig(:db_password)}@localhost/the_simple_api_development" %>
 
-
-  # The specified database role being used to connect to postgres.
-  # To create additional roles in postgres see `$ createuser --help`.
-  # When left blank, postgres will use the default role. This is
-  # the same name as the operating system user running Rails.
-  #username: the_simple_api
-
-  # The password associated with the postgres role (username).
-  #password:
-
-  # Connect on a TCP socket. Omitted by default since the client uses a
-  # domain socket that doesn't need configuration. Windows does not have
-  # domain sockets, so uncomment these lines.
-  #host: localhost
-
-  # The TCP port the server listens on. Defaults to 5432.
-  # If your server runs on a different port number, change accordingly.
-  #port: 5432
+  # If you need to change the user or port, you can do so by changing the url string.
+  # url: <%= "postgresql://your_user:#{Rails.application.credentials.dig(:db_password)}@localhost:your_port/the_simple_api_development" %>
 
   # Schema search path. The server defaults to $user,public
   #schema_search_path: myapp,sharedapp,public
@@ -45,26 +35,6 @@ test:
   url: <%= "postgresql://rails:#{Rails.application.credentials.dig(:db_password)}@localhost/the_simple_api_test" %>
 
 
-  # As with config/credentials.yml, you never want to store sensitive information,
-  # like your database password, in your source code. If your source code is
-  # ever seen by anyone, they now have access to your database.
-  #
-  # Instead, provide the password or a full connection URL as an environment
-  # variable when you boot the app. For example:
-  #
-  #   DATABASE_URL="postgres://myuser:mypass@localhost/somedatabase"
-  #
-  # If the connection URL is provided in the special DATABASE_URL environment
-  # variable, Rails will automatically merge its configuration values on top of
-  # the values provided in this file. Alternatively, you can specify a connection
-  # URL environment variable explicitly:
-  #
-  #   production:
-  #     url: <%= ENV['MY_APP_DATABASE_URL'] %>
-  #
-  # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
-  # for a full overview on how database connection configuration can be specified.
-  #
 production:
   <<: *default
   url: <%= "postgresql://rails:#{Rails.application.credentials.dig(:db_password)}@localhost/the_simple_api_production" %>

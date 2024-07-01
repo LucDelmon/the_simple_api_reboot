@@ -20,6 +20,7 @@ group :development, :test do
   gem 'byebug', '~> 11.1', '>= 11.1.3'
   gem 'pry', '~> 0.14.1'
 
+  gem 'brakeman'
   gem 'database_cleaner-active_record', '~> 2.1'
   gem 'rspec-rails', '~> 6.1', '>= 6.1.3'
   gem 'rubocop', '~> 1.64', '>= 1.64.1'

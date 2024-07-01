@@ -8,6 +8,7 @@ AllCops:
   Exclude:
     - 'db/**/*'
     - 'script/**/*'
+    - 'vendor/**/*'
     - 'bin/{rails,rake,bundle,setup,spring}'
 
 Layout/ArgumentAlignment:

@@ -32,7 +32,7 @@ development:
   # Do not set this db to the same as development or production.
 test:
   <<: *default
-  url: <%= "postgresql://rails:#{Rails.application.credentials.dig(:db_password)}@localhost/the_simple_api_test" %>
+  url: <%= "postgresql://rails:#{Rails.application.credentials.dig(:db_password) || 'default_password'}@localhost/the_simple_api_test" %>
 
 
 production:

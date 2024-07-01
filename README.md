@@ -16,3 +16,7 @@ The project is intended to be used as a reference for other projects and as a st
 - Ruby version 3.3.0
 - PostgresSQL with a user `rails` created, the password associated with this user must be added to the credentials file (`rails credentials:edit`) under the name `db_password`
 - Redis installed locally
+
+# CI
+The CI is done with GitHub actions and is composed of 1 workflow:
+- `ci.yml` that is triggered on every push on the `master` branch

@@ -57,6 +57,19 @@ jobs:
           name: code-coverage
           path: coverage/
 
+  release:
+    name: release
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   static_analysis:
     runs-on: ubuntu-latest
 

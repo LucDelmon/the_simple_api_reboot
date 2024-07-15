@@ -38,3 +38,13 @@ The CI is done with GitHub actions and is composed of 1 workflow.
 
 # CD
 The CD is done with GitHub actions in the same workflow as the CI. It is trigger only if the build and tests jobs are green. The release is done with the `semantic-release` tool that will create a new release on GitHub.
+
+# Deployment
+
+I'm planning to test several deployments:
+- All EC2 with terraform + GA
+- All EC2 with cloud formation + GA
+- EC2 + S3 + RDS + GA
+- EC2 + S3 + RDS + Capistrano
+- ECS with the best combo from the others
+- elastic beanstalk

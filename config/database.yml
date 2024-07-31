@@ -37,4 +37,4 @@ test:
 
 production:
   <<: *default
-  url: <%= "postgresql://rails:#{Rails.application.credentials.dig(:db_password)}@localhost/the_simple_api_production" %>
+  url: <%= "postgresql://rails:#{Rails.application.credentials.dig(:db_password)}@#{ENV['DB_HOST'] || 'localhost'}/the_simple_api_production" %>

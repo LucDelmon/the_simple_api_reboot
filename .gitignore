@@ -22,3 +22,10 @@
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 coverage
+config/terraform/.terraform
+config/terraform/terraform.tfstate
+config/terraform/terraform.tfstate.backup
+config/terraform/.terraform.lock.hcl
+config/terraform/terraform.tfvars
+
+/config/credentials/production.key

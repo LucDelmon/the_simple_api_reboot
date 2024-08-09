@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.0.0...v1.1.0) (2024-08-09)
+
+
+### Features
+
+* add ssl exception to health check in production ([94f7b0e](https://github.com/LucDelmon/the_simple_api_reboot/commit/94f7b0e285178b16f00177917e446346e2d4aaf9))
+
 # 1.0.0 (2024-07-06)
 
 

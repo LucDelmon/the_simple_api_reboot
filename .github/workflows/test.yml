@@ -1,0 +1,65 @@
+name: TEST
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    permissions:
+      id-token: write
+      contents: read
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Release Zip
+        run: |
+          RELEASE_VERSION="v1.1.0"
+          curl -L -o $RELEASE_VERSION.zip "https://github.com/LucDelmon/the_simple_api_reboot/archive/refs/tags/$RELEASE_VERSION.zip"
+
+      - name: Configure AWS credentials
+        id: aws-credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::339712704006:role/GitHubActionsRole
+          role-session-name: github-actions-deploy
+          aws-region: eu-north-1
+          output-credentials: true
+
+      - name: Upload file to S3
+        run: |
+          aws s3 cp v1.1.0.zip s3://simple-api-my-deployments-bucket/
+
+      - name: Send SSM Command
+        id: send_command
+        run: |
+          INSTANCE_ID='i-097e7c9fca71f81a1'
+          COMMAND="deploy.sh v1.1.0"
+          COMMAND_ID=$(aws ssm send-command --document-name "AWS-RunShellScript" \
+            --targets "Key=instanceids,Values=$INSTANCE_ID" \
+            --parameters 'commands=["bash /home/ubuntu/'"$COMMAND"'"]' \
+            --comment "playing deploy script" \
+            --query "Command.CommandId" --output text)
+
+          echo "COMMAND_ID=$COMMAND_ID"
+          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
+
+
+      - name: Wait for SSM Command Execution
+        run: |
+          aws ssm wait command-executed --command-id $COMMAND_ID --instance-id i-097e7c9fca71f81a1
+        continue-on-error: true
+
+      - name: Check Command Execution Status
+        run: |
+          STATUS=$(aws ssm list-command-invocations --command-id $COMMAND_ID --details --query "CommandInvocations[0].Status" --output text)
+          echo "Command execution status: $STATUS"
+
+          if [[ "$STATUS" != "Success" ]]; then
+            OUTPUT=$(aws ssm list-command-invocations --command-id $COMMAND_ID --details --query "CommandInvocations[0].CommandPlugins[0].Output" --output text)
+
+            echo "Command failed with status: $STATUS"
+            echo "Command output: "
+            echo "$OUTPUT" | tail -n 30
+            exit 1
+          fi

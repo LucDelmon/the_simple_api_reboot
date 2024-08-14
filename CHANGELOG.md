@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.4...v1.2.5) (2024-08-14)
+
+
+### Bug Fixes
+
+* going back to the release trigger ([54bf4b6](https://github.com/LucDelmon/the_simple_api_reboot/commit/54bf4b61931f78a02068915bd7b3b2b5462e7bec))
+
 ## [1.2.4](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.3...v1.2.4) (2024-08-14)
 
 

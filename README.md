@@ -67,6 +67,9 @@ I'm planning to test several deployments:
 #### 3. Buy a domain name
 - You will need to have a domain name and admin access to the DNS configuration. You have to pay for that at a provider (or use a free one). You can also set-up route 53 in aws.
 
+#### 4. Personal access token
+- You will need a personal access token for sem ver. Go to your github settings, developer settings, personal access tokens and create a new token with the `repo`, `write:packages`, `admin:repo_hook` and `workflow authorisation`. Add it to you github secrets as `GH_TOKEN`.
+
 # First Setup: EC2 + S3 + RDS via Terraform + github actions
 
 This first setup try to stay minimal and only aim at deploying the app on one persistent server on EC2. The whole configuration is written as code in terraform and is meant to be deployed once. Once everything is set up, the CI/CD will take care of the continuous deployment via github actions.

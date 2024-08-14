@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.1.0...v1.2.0) (2024-08-14)
+
+
+### Features
+
+* First CD with terraform ([9a0653c](https://github.com/LucDelmon/the_simple_api_reboot/commit/9a0653cf47b80396f9ee5235a4911441a35a1fba))
+
 # [1.1.0](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.0.0...v1.1.0) (2024-08-09)
 
 

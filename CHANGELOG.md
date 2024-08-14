@@ -1,3 +1,12 @@
+## [1.2.1](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.0...v1.2.1) (2024-08-14)
+
+
+### Bug Fixes
+
+* still trying to fix CD ([8331c0d](https://github.com/LucDelmon/the_simple_api_reboot/commit/8331c0d6fa534b696d66a6106d9d7c73580c6029))
+* try to fix CD that does not trigger ([91959dc](https://github.com/LucDelmon/the_simple_api_reboot/commit/91959dce943486889153319bc313fe697ca2ccc5))
+* update policies to allow CD job to assume aws role ([6b3141a](https://github.com/LucDelmon/the_simple_api_reboot/commit/6b3141a145e1b87e711da65e310baac429283d3e))
+
 # [1.2.0](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.1.0...v1.2.0) (2024-08-14)
 
 

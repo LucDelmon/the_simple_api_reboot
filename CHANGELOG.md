@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.2...v1.2.3) (2024-08-14)
+
+
+### Bug Fixes
+
+* triggering CD ([fbfff3e](https://github.com/LucDelmon/the_simple_api_reboot/commit/fbfff3e5a39ded33c6a98ff5685ef47257ea38ef))
+
 ## [1.2.2](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.1...v1.2.2) (2024-08-14)
 
 

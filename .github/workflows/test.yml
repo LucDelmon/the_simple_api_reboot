@@ -1,0 +1,21 @@
+name: CI
+on: [push]
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+
+    steps:
+      - name: Configure AWS credentials
+        id: aws-credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-session-name: github-actions-deploy
+          aws-region: ${{ vars.AWS_REGION }}
+          output-credentials: true

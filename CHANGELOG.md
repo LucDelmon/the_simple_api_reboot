@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.3...v1.2.4) (2024-08-14)
+
+
+### Bug Fixes
+
+* try using a PAT ([b838efb](https://github.com/LucDelmon/the_simple_api_reboot/commit/b838efb1a3724b6e62001f1dfdde9ef5dc4fc566))
+
 ## [1.2.3](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.2...v1.2.3) (2024-08-14)
 
 

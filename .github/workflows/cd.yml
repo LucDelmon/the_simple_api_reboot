@@ -1,8 +1,7 @@
 name: Deploy
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 jobs:
   deploy:
@@ -13,7 +12,7 @@ jobs:
       contents: read
 
     env:
-      RELEASE_VERSION: ${{ github.ref_name }}
+      RELEASE_VERSION: ${{ github.event.release.tag_name }}
 
     steps:
       - name: Download Release Zip

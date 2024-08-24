@@ -1,3 +1,10 @@
+## [1.2.6](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.5...v1.2.6) (2024-08-24)
+
+
+### Bug Fixes
+
+* add log output ([7b79906](https://github.com/LucDelmon/the_simple_api_reboot/commit/7b79906fda78d4390cf51959ed76263cdc6d9ae8))
+
 ## [1.2.5](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.4...v1.2.5) (2024-08-14)
 
 

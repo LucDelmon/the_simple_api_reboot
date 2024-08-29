@@ -59,6 +59,28 @@ resource "aws_iam_policy" "s3_push_policy" {
   })
 }
 
+
+resource "aws_iam_policy" "put_logs_policy" {
+  name        = "PutLogsPolicy"
+  description = "Policy for putting logs"
+
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ],
+        "Resource": "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_policy" "ssm_send_policy" {
   name        = "SSMSendPolicy"
   description = "Policy for sending and checking ssm commands"
@@ -188,6 +210,14 @@ resource "aws_iam_role_policy_attachment" "attach_s3_pull_policy" {
 resource "aws_iam_role_policy_attachment" "attach_ssm_send_policy" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.ssm_receive_policy.arn
+}
+resource "aws_iam_role_policy_attachment" "ec2_cloudwatch_attach" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+resource "aws_iam_role_policy_attachment" "attach_put_logs_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.put_logs_policy.arn
 }
 resource "aws_iam_role_policy_attachment" "attach_s3_push_policy" {
   role       = aws_iam_role.github_actions_role.name

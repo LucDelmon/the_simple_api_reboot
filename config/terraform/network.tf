@@ -33,6 +33,17 @@ resource "aws_subnet" "private" {
   }
 }
 
+resource "aws_eip" "nat" {
+  count = length(var.public_subnet_cidrs)
+  domain = "vpc"
+}
+
+resource "aws_nat_gateway" "nat" {
+  count = length(var.public_subnet_cidrs)
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id  # One NAT Gateway per public subnet
+}
+
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
@@ -54,27 +65,39 @@ resource "aws_route_table" "public-table" {
   }
 }
 
+resource "aws_route_table" "private-table" {
+  count  = length(var.private_subnet_cidrs)
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat[count.index].id
+  }
+
+  tags = {
+    Name = "private-rt-${count.index + 1}"
+  }
+}
+
 resource "aws_route_table_association" "public-table" {
   count = length(var.public_subnet_cidrs)
   subnet_id      = element(aws_subnet.public[*].id, count.index)
   route_table_id = aws_route_table.public-table.id
 }
 
-resource "aws_lb_listener" "http_listener" {
-  load_balancer_arn = aws_lb.app_lb.arn
-  port              = 80
-  protocol          = "HTTP"
+resource "aws_route_table_association" "private-table" {
+  count = length(var.private_subnet_cidrs)
+  subnet_id      = element(aws_subnet.private[*].id, count.index)
+  route_table_id = element(aws_route_table.private-table[*].id, count.index)
+}
 
-  default_action {
-    type = "redirect"
-    redirect {
-      host        = "#{host}"
-      path        = "/"
-      port        = "443"
-      protocol    = "HTTPS"
-      query       = "#{query}"
-      status_code = "HTTP_301"
-    }
+resource "aws_ec2_instance_connect_endpoint" "aws_ec2_instance_connect_endpoint" {
+  security_group_ids = [aws_security_group.ec2_instance_connect_sg.id]
+
+  subnet_id = aws_subnet.private[0].id  # Attach to private subnet
+
+  tags = {
+    Name = "ec2-instance-connect-endpoint"
   }
 }
 
@@ -82,8 +105,9 @@ resource "aws_lb_listener" "https_listener" {
   load_balancer_arn = aws_lb.app_lb.arn
   port              = 443
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"  # Use the appropriate policy
-  certificate_arn   = var.ssl_certificate_arn  # Your ACM certificate ARN
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = var.internal_alb_certificate_arn
+
 
   default_action {
     type = "forward"

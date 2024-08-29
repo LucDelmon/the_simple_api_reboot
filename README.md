@@ -72,6 +72,9 @@ I'm planning to test several deployments:
 
 # First Setup: EC2 + S3 + RDS via Terraform + github actions
 
+from [9a0653cf47b80396f9ee5235a4911441a35a1fba](https://github.com/LucDelmon/the_simple_api_reboot/commit/9a0653cf47b80396f9ee5235a4911441a35a1fba)
+Up to [54bf4b61931f78a02068915bd7b3b2b5462e7bec](https://github.com/LucDelmon/the_simple_api_reboot/commit/54bf4b61931f78a02068915bd7b3b2b5462e7bec)
+
 This first setup try to stay minimal and only aim at deploying the app on one persistent server on EC2. The whole configuration is written as code in terraform and is meant to be deployed once. Once everything is set up, the CI/CD will take care of the continuous deployment via github actions.
 
 On top of the EC2 the configuration contains:
@@ -203,6 +206,27 @@ In the github repository, go to `/settings/variables/actions` and add the follow
 - AWS_REGION -> the region where the resources are created. `eu-north-1` by default.
 
 When this is done all CI/CD will be able to connect to aws.
+
+# Second Setup: Same as the first but trying to reduce the cons from the first setup
+
+After first setup: 
+- Create as many elastic IPS as subnets
+- moving the server to a private subnet
+- adding a NAT gateway to allow the server to connect to the internet for ssm
+- Setting an instant connect endpoint to allow an access to the server from the aws console
+- Setting up DB backup
+- installing the cloudwatch agent on the server
+- Adding a bunch of cloudwatch alarms linked to an sns
+- The sns will send an email to the configured email address
+- Add logs for the ALB (going to S3)
+- Add logs for the RDS going to cloudwatch
+- Add a cloudfront distribution in front of the ALB
+- Recreate a certificate in us-east-1 for the cloudfront distribution
+- Make the ALB communicate to the cloudfront via HTTP and remove HTTPS. Also remove the certificate
+- Update security group to restrict ALB communication to the cloudfront
+- Check different audit tools from aws to see if everything is ok
+- Make a second certificate for the ALB. Allowing the ALB to communicate with the cloudfront via HTTPS
+- Add a CNAME entry in my dns for the ALB
 
 # Extras
 

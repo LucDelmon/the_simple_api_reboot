@@ -3,10 +3,110 @@ exec > /var/log/user-data.log 2>&1
 
 SCRIPT_RUBY_VERSION="3.3.0"
 SCRIPT_BUNDLER_VERSION="2.5.6"
+INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+INSTANCE_TYPE=$(curl -s http://169.254.169.254/latest/meta-data/instance-type)
+IMAGE_ID=$(curl -s http://169.254.169.254/latest/meta-data/ami-id)
+
+# Set the CloudWatch Logs Group Name (can be set dynamically or hardcoded)
+LOG_GROUP_NAME="/aws/ec2/$INSTANCE_ID"
+
+# Wait for network to be up
+echo "Checking network connectivity..."
+for i in {1..5}; do
+    if ping -c 1 8.8.8.8 &> /dev/null; then
+        echo "Network is up."
+        break
+    else
+        echo "Network is down, attempt $i/5..."
+        sleep 10
+    fi
+done
+
+if [ $i -gt 5 ]; then
+    echo "Failed to establish network connectivity."
+    exit 1
+fi
 
 # Install the necessary packages
 sudo apt-get update
-sudo apt-get install -y awscli jq libpq-dev unzip
+sudo apt-get install -y awscli jq libpq-dev unzip rpm
+
+wget https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+sudo dpkg -i amazon-cloudwatch-agent.deb
+
+# Install the CloudWatch agent
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
+
+# Create the CloudWatch Agent configuration file
+sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json > /dev/null <<EOT
+{
+  "agent": {
+    "run_as_user": "ubuntu"
+  },
+  "metrics": {
+    "metrics_collected": {
+      "mem": {
+        "measurement": [
+          "mem_used_percent"
+        ]
+      },
+      "disk": {
+        "measurement": [
+          "used_percent"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    },
+    "append_dimensions": {
+      "ImageId": "$IMAGE_ID",
+      "InstanceId": "$INSTANCE_ID",
+      "InstanceType": "$INSTANCE_TYPE"
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/home/ubuntu/current/log/puma.stdout.log",
+            "log_group_name": "$LOG_GROUP_NAME",
+            "log_stream_name": "$INSTANCE_ID/puma-stdout",
+            "retention_in_days": 7,
+            "filters": [
+              {
+                "type": "exclude",
+                "expression": "Started GET \"/up\""
+              },
+              {
+                "type": "exclude",
+                "expression": "Processing by Rails::HealthController#show"
+              },
+              {
+                "type": "exclude",
+                "expression": "Completed 200 OK"
+              }
+            ]
+          },
+          {
+            "file_path": "/home/ubuntu/current/log/puma.stderr.log",
+            "log_group_name": "$LOG_GROUP_NAME",
+            "log_stream_name": "$INSTANCE_ID/puma-stderr",
+            "retention_in_days": 7
+          }
+        ]
+      }
+    }
+  }
+}
+EOT
+
+sudo rm /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.d/default # Remove the default configuration file that will conflict with the custom configuration
+
+sudo systemctl restart amazon-cloudwatch-agent
+
+# see https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html to add more metrics
 
 # Function to retrieve the Rails master key and set up the Rails environment variables
 function setup_rails_env() {

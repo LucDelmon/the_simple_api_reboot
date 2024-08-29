@@ -43,13 +43,8 @@ variable "web_concurrency" {
 # Variable without a default value
 
 variable "ssh_public_key" {
-  description = "private SSH public key to use for the EC2 instance"
+  description = "private SSH public key. Unused for now but still defined in hcp terraform if needed"
   type = string
-}
-
-variable "allowed_ip" {
-  description = "The IP address to allow for SSH access"
-  type        = string
 }
 
 variable "github_repo" {
@@ -75,4 +70,24 @@ variable "encryption_key_arn" {
 variable "ssl_certificate_arn" {
   description = "ARN of the SSL certificate in ACM"
   type        = string
+}
+
+variable "domain_name" {
+  description = "Domain name for the application"
+  type        = string
+}
+
+variable "internal_alb_certificate_arn" {
+  description = "ARN of the SSL certificate for the ALB in ACM"
+  type        = string
+}
+
+variable "alb_domain_name" {
+  description = "Domain name for the alb"
+  type        = string
+}
+
+variable "email" {
+    description = "Email address for receiving notifications"
+    type        = string
 }

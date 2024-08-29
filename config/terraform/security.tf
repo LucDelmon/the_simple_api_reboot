@@ -13,17 +13,10 @@ resource "aws_security_group" "app_server_security_group" {
   }
 
   ingress {
-    from_port   = 22    # SSH port
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["${var.allowed_ip}/32"]  # Allow SSH
-  }
-
-  ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["13.48.4.200/30"]  # Allow SSH traffic from EC2 Instance Connect
+    security_groups = [aws_security_group.ec2_instance_connect_sg.id]
   }
 
   ingress {
@@ -68,23 +61,36 @@ resource "aws_security_group" "allow_db_access" {
   }
 }
 
+resource "aws_security_group" "ec2_instance_connect_sg" {
+  name        = "ec2_instance_connect_sg"
+  description = "Security group for EC2 Instance Connect Endpoint"
+  vpc_id      = aws_vpc.main.id
+}
+
+resource "aws_security_group_rule" "connect_to_app" {
+  type              = "egress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  security_group_id = aws_security_group.ec2_instance_connect_sg.id
+  source_security_group_id = aws_security_group.app_server_security_group.id
+}
+
+data "aws_ec2_managed_prefix_list" "cloudfront_prefix_list" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
 resource "aws_security_group" "alb_security_group" {
   name        = "alb_security_group"
   description = "Allow HTTP and HTTPS traffic"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow HTTP traffic from anywhere
-  }
-
-  ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow HTTPS traffic from anywhere
+#     cidr_blocks = ["0.0.0.0/0"]
+    prefix_list_ids   = [data.aws_ec2_managed_prefix_list.cloudfront_prefix_list.id]
   }
 
   egress {

@@ -1,7 +1,9 @@
-allowed_ip   = "" # your ip, will allow you to ssh to the ec2 instance
-ssh_public_key  = "" # your public key
 db_password  = "" # password for the database
 github_repo  = "" # github repo for the app
 terraform_admin_role_arn = "" # arn of the admin role in aws
 encryption_key_arn = "" # arn of the credential key in aws secret manager
 ssl_certificate_arn = "" # arn of the ssl certificate in aws certificate manager
+domain_name = "" # domain name for the app
+alb_dns_name = "" # dns name of the application load balancer
+alb_certificate_arn = "" # arn of the ssl certificate in aws certificate manager for the alb
+email = "" # email for the notifications

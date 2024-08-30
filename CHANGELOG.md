@@ -1,3 +1,16 @@
+# [1.3.0](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.6...v1.3.0) (2024-08-30)
+
+
+### Bug Fixes
+
+* add help controller spec to improve coverage ([b793702](https://github.com/LucDelmon/the_simple_api_reboot/commit/b793702c0dea3436ef37dcd54038e8d6f3eba84d))
+* always push code coverage ([80d2284](https://github.com/LucDelmon/the_simple_api_reboot/commit/80d22841ac1a7951581593edac8b7e25c65c7d1c))
+
+
+### Features
+
+* Second Setup ([d11bf44](https://github.com/LucDelmon/the_simple_api_reboot/commit/d11bf44dab93f463f326369a90a7a22c197e96a4))
+
 ## [1.2.6](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.5...v1.2.6) (2024-08-24)
 
 

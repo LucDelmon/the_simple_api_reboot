@@ -41,3 +41,11 @@ end
 group :test do
   gem 'simplecov', require: false
 end
+
+group :deployment do
+  gem 'capistrano', '~> 3.19'
+  gem 'capistrano3-puma', '~> 6.0.0.beta.1'
+  gem 'capistrano-bundler', '~> 2.1'
+  gem 'capistrano-rails', '~> 1.6'
+  gem 'capistrano-rvm'
+end

@@ -209,6 +209,10 @@ When this is done all CI/CD will be able to connect to aws.
 
 # Second Setup: Same as the first but trying to reduce the cons from the first setup
 
+from [7b79906fda78d4390cf51959ed76263cdc6d9ae8](https://github.com/LucDelmon/the_simple_api_reboot/commit/7b79906fda78d4390cf51959ed76263cdc6d9ae8)
+Up to [f4efd88561114df5276ac141d2f96d6f059a57bf](https://github.com/LucDelmon/the_simple_api_reboot/commit/f4efd88561114df5276ac141d2f96d6f059a57bf)
+
+
 After first setup: 
 - Create as many elastic IPS as subnets
 - moving the server to a private subnet
@@ -227,6 +231,76 @@ After first setup:
 - Check different audit tools from aws to see if everything is ok
 - Make a second certificate for the ALB. Allowing the ALB to communicate with the cloudfront via HTTPS
 - Add a CNAME entry in my dns for the ALB
+
+# Third Setup: Adding Capistrano
+
+The setup aims at using capistrano for deployment. However, capistrano rely on ssh so we have to dump the usage of ssm command and permit an ssh access on the EC2 instance.
+
+For that :
+
+- We add a bastion host to the configuration. This will allow connection to the private instance via SSH.
+- We redeploy ssh private keys on the instance and the bastion. One for github actions and one for the local machine.
+- We also install squid on the bastion and remove the expensive Nat gateway. This will allow the private instance to connect to the internet via the bastion for downloads. This imply setting up the proxy in many tools
+
+
+## Pros and Cons
+### Pros
+- No need to maintain a deploy script. Capistrano handle everything, especially the manipulation of release folders and auto-cleaning.
+- It's also possible to rollback, stop the puma service, deploy a specific release from local. This allow more admin day to day manipulation.
+- The Bastion is way cheaper than the Nat gateways.
+- The deploy steps played by capistrano are visible in github actions so it's easier to follow fails.
+
+### Cons
+- The bastion is a single point of failure. If it goes down, you can't deploy anymore. But it's okay since we still have one instance only.
+- Relying on ssh seems less secure than the ssm command. But we have good security groups that open dynamically to github actions IP only.
+- The proxy config must be set up in many tools. This would be annoying to edit if the bastion private ip was too changed (but we decide that and there is no reason for it to change).
+- Capistrano does not load env and does not allow a dynamic injection of env after starting. This force us to temporally write the RAILS_MASTER_KEY into config/master.key while capistrano is running. It still feel really secure since the server is not accessible from the outside but not as good as before. An option could be to retrieve it in Github actions to add it as an env variable in the 
+  capistrano command. But I believe that having it available in less place is better.
+
+
+## Configuration update
+
+### 1. Update the terraform configuration
+- Run `terraform apply` to create the bastion host and all other new resources.
+
+### 2. Allow local to connect to the bastion
+ - Add a variable for the ip to whitelist in the security group of the bastion. This will allow the local machine to connect to the bastion via ssh.
+ - injecting the public ssh key (saved on terraform cloud) in the bastion instance and the app server.
+
+### 3. Edit local ssh config
+- Add a configuration to the local ssh config file to allow a direct connection to the app server via the bastion. This will allow to test the capistrano deployment from local.
+- The configuration is added to the `~/.ssh/config` file.
+  ```txt
+  Host bastion
+   HostName bastion-host@example.com (or the ip)
+   User ec2-user
+   IdentityFile ~/.ssh/id_rsa
+
+  Host private-instance
+   HostName 10.0.4.219
+   User ubuntu
+   IdentityFile ~/.ssh/id_rsa
+   ProxyJump bastion
+    ```
+
+### 4. Add ec2 fingerprint to known_hosts
+_connection manually once might not be enough._
+- Connect to the bastion: `ssh ec2-user@bastion-host.lucdelmon.com` (or the ip)
+- get the fingerprint of the app server: ssh-keyscan -H 10.0.4.219
+- Add the fingerprint to the known_hosts file(~/.ssh/known_hosts).
+
+### 5. Local deploy
+- `bundle exec cap production deploy BRANCH="v1.3.0" DB_HOST="your_host"` (replace your_host by the host of the RDS that you can find in the terraform output)
+### 6. Github Actions
+- Generate a pair of ssh key for github actions and the ec2. `ssh-keygen -t rsa -b 4096 -f github_actions_key -C "github-actions"`
+- Go to your GitHub repository > Settings > Secrets and Variables > Actions > New repository secret. 
+- Name the secret DEPLOYMENT_PRIVATE_KEY and paste the content of github_actions_bastion_key into the value field.
+- Deployment is still triggered by a release. The release is created by semantic-release.
+
+### 7. Cleaning
+- you can play `terraform destroy -target=aws_instance.bastion_host` to destroy the bastion host.
+- you can play `terraform destroy -target=aws_instance.bastion_eip` to destroy the bastion eip.
+- All this is cost effective because this resources can go out of the free tier
 
 # Extras
 

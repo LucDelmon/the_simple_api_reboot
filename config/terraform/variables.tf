@@ -43,8 +43,18 @@ variable "web_concurrency" {
 # Variable without a default value
 
 variable "ssh_public_key" {
-  description = "private SSH public key. Unused for now but still defined in hcp terraform if needed"
+  description = "public personal SSH public key"
   type = string
+}
+
+variable "github_actions_public_key" {
+  type = string
+  description = "The public SSH key for GitHub Actions."
+}
+
+variable "whitelist_ip" {
+  description = "IP address to whitelist for SSH access"
+  type        = string
 }
 
 variable "github_repo" {

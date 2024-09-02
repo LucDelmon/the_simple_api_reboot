@@ -15,10 +15,6 @@ jobs:
       RELEASE_VERSION: ${{ github.event.release.tag_name }}
 
     steps:
-      - name: Download Release Zip
-        run: |
-          curl -L -o $RELEASE_VERSION.zip "https://github.com/LucDelmon/the_simple_api_reboot/archive/refs/tags/$RELEASE_VERSION.zip"
-
       - name: Configure AWS credentials
         id: aws-credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -31,41 +27,64 @@ jobs:
       - name: Get SSM Parameters
         uses: dkershner6/aws-ssm-getparameters-action@v2
         with:
-          parameterPairs: "/simple_app/ec2_instance_id = INSTANCE_ID,/simple_app/s3_bucket = S3_BUCKET,/simple_app/region = REGION"
+          parameterPairs: "/simple_app/bastion_sg_id = BASTION_SG_ID, /simple_app/bastion_host_ip = BASTION_HOST_IP, /simple_app/db_host = DB_HOST"
 
-      - name: Upload file to S3
+      - name: Get GitHub Actions IP
+        run: echo "GITHUB_ACTION_IP=$(curl -s https://checkip.amazonaws.com)" >> $GITHUB_ENV
+
+      - name: Allow GitHub Actions IP in Security Group
         run: |
-          aws s3 cp $RELEASE_VERSION.zip s3://$S3_BUCKET/
+          aws ec2 authorize-security-group-ingress \
+            --group-id $BASTION_SG_ID \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ env.GITHUB_ACTION_IP }}/32
+          echo "SG_RULE_ADDED=true" >> $GITHUB_ENV
 
-      - name: Send SSM Command
-        id: send_command
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOYMENT_PRIVATE_KEY }}
+
+      - name: SSH Key Scan for Bastion Host
         run: |
-          COMMAND="deploy.sh $RELEASE_VERSION"
-          COMMAND_ID=$(aws ssm send-command --document-name "AWS-RunShellScript" \
-            --targets "Key=instanceids,Values=$INSTANCE_ID" \
-            --parameters 'commands=["bash /home/ubuntu/'"$COMMAND"'"]' \
-            --comment "playing deploy script" \
-            --query "Command.CommandId" --output text)
+          ssh-keyscan -H $BASTION_HOST_IP >> ~/.ssh/known_hosts
 
-          echo "COMMAND_ID=$COMMAND_ID" >> $GITHUB_ENV
-
-      - name: Wait for SSM Command Execution
+      - name: Create SSH Config File
         run: |
-          aws ssm wait command-executed --command-id $COMMAND_ID --instance-id $INSTANCE_ID
+          echo "Host bastion" > ~/.ssh/config
+          echo "  HostName $BASTION_HOST_IP" >> ~/.ssh/config
+          echo "  User ec2-user" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+          echo "" >> ~/.ssh/config
+          echo "Host simple-api-server" >> ~/.ssh/config
+          echo "  HostName 10.0.4.219" >> ~/.ssh/config
+          echo "  User ubuntu" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+          echo "  ProxyJump bastion" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+
+      - name: Checkout Code at Release Tag
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Deploy via Capistrano
+        id: deploy
+        run: bundle exec cap production deploy BRANCH=$RELEASE_VERSION DB_HOST=$DB_HOST
         continue-on-error: true
 
-      - name: Check Command Execution Status
+      - name: Revoke GitHub Actions IP from Security Group
+        if: env.SG_RULE_ADDED == 'true'
         run: |
-          STATUS=$(aws ssm list-command-invocations --command-id $COMMAND_ID --details --query "CommandInvocations[0].Status" --output text)
-          echo "Command execution status: $STATUS"
+          aws ec2 revoke-security-group-ingress \
+            --group-id $BASTION_SG_ID \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ env.GITHUB_ACTION_IP }}/32
 
-          if [[ "$STATUS" != "Success" ]]; then
-            OUTPUT=$(aws ssm list-command-invocations --command-id $COMMAND_ID --details --query "CommandInvocations[0].CommandPlugins[0].Output" --output text)
-            COMMAND_URL="https://$REGION.console.aws.amazon.com/systems-manager/run-command/$COMMAND_ID/$INSTANCE_ID?region=$REGION"
-
-            echo "Command failed with status: $STATUS"
-            echo "Command output: "
-            echo "$OUTPUT" | tail -n 25
-            echo "See the command in the AWS console: $COMMAND_URL"
-            exit 1
-          fi
+      - name: Fail Job if Deployment Fails
+        if: steps.deploy.outcome == 'failure'
+        run: exit 1

@@ -146,14 +146,35 @@ resource "aws_iam_policy" "ssm_parameter_get_policy" {
         ]
         Effect   = "Allow"
         Resource = [
-          aws_ssm_parameter.ec2_instance_id.arn,
-          aws_ssm_parameter.s3_bucket.arn,
-          aws_ssm_parameter.region.arn
+          aws_ssm_parameter.region.arn,
+          aws_ssm_parameter.bastion_host_ip.arn,
+          aws_ssm_parameter.bastion_sg_id.arn,
+          aws_ssm_parameter.db_host.arn,
         ]
       }
     ]
   })
 }
+
+resource "aws_iam_policy" "edit_sg_policy" {
+  name        = "EditGroupPolicy"
+  description = "Policy to allow modifying security groups"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:DescribeSecurityGroups"
+        ],
+        Effect   = "Allow",
+        Resource = aws_security_group.bastion.arn
+      }
+    ]
+  })
+}
+
 
 
 # create IAM roles
@@ -230,4 +251,9 @@ resource "aws_iam_role_policy_attachment" "attach_ssm_receive_policy" {
 resource "aws_iam_role_policy_attachment" "attach_ssm_parameter_get_policy" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = aws_iam_policy.ssm_parameter_get_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "attach_github_actions_sg_policy" {
+  role       = aws_iam_role.github_actions_role.name
+  policy_arn = aws_iam_policy.edit_sg_policy.arn
 }

@@ -7,3 +7,5 @@ domain_name = "" # domain name for the app
 alb_dns_name = "" # dns name of the application load balancer
 alb_certificate_arn = "" # arn of the ssl certificate in aws certificate manager for the alb
 email = "" # email for the notifications
+whitelist_ip = "" # ip address to whitelist for the database
+github_actions_public_key = "" # public key for github actions

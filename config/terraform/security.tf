@@ -20,6 +20,13 @@ resource "aws_security_group" "app_server_security_group" {
   }
 
   ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    security_groups = [aws_security_group.bastion.id]
+  }
+
+  ingress {
     from_port   = 3000  # Puma server port
     to_port     = 3000
     protocol    = "tcp"
@@ -67,6 +74,32 @@ resource "aws_security_group" "ec2_instance_connect_sg" {
   vpc_id      = aws_vpc.main.id
 }
 
+resource "aws_security_group" "bastion" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["${var.whitelist_ip}/32"] # Restrict to your IP for SSH access
+  }
+
+  ingress {
+    from_port         = 3128
+    to_port           = 3128
+    protocol          = "tcp"
+    cidr_blocks       = ["10.0.4.219/32"]
+
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_security_group_rule" "connect_to_app" {
   type              = "egress"
   from_port         = 22
@@ -89,7 +122,6 @@ resource "aws_security_group" "alb_security_group" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
     prefix_list_ids   = [data.aws_ec2_managed_prefix_list.cloudfront_prefix_list.id]
   }
 

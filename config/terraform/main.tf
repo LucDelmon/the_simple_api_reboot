@@ -4,6 +4,11 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.63.0"
     }
+
+    github = {
+      source  = "integrations/github"
+      version = "6.2.2"
+    }
   }
 
   cloud {
@@ -30,21 +35,29 @@ provider "aws" {
   }
 }
 
+resource "aws_key_pair" "deployer_key" {
+  key_name   = "deployer-key"
+  public_key = var.ssh_public_key
+}
+
 resource "aws_instance" "app_server" {
   ami           = "ami-07a0715df72e58928" # Ubuntu Server 22.04 LTS (HVM), SSD Volume Type, code is dependant to the region used
   instance_type = "t3.micro"
   vpc_security_group_ids = [aws_security_group.app_server_security_group.id]  # Associate the security group
   subnet_id              = aws_subnet.private[0].id  # Launch instance in private subnet
+  private_ip             = "10.0.4.219"
   iam_instance_profile = aws_iam_instance_profile.ec2_role.name
-
+  key_name      = aws_key_pair.deployer_key.key_name
 
   user_data = templatefile("${path.module}/ec2_user_data.sh", {
     DB_HOST      = aws_db_instance.my_database.address,
     DB_USERNAME  = var.db_username,
     WEB_CONCURRENCY = var.web_concurrency,
     REGION       = var.aws_region,
-    S3_BUCKET_URL = "s3://${aws_s3_bucket.deployments_bucket.bucket}"
+    SSH_PUBLIC_KEY = var.github_actions_public_key
   })
+
+  depends_on = [aws_instance.bastion_host]
 
   tags = {
     Name = var.instance_name
@@ -360,6 +373,33 @@ resource "aws_s3_bucket_ownership_controls" "cloudfront_logs_bucket_ownership" {
   }
 }
 
+resource "aws_instance" "bastion_host" {
+  ami           = "ami-090abff6ae1141d7d"
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.public[0].id
+  key_name      = aws_key_pair.deployer_key.key_name
+  vpc_security_group_ids = [aws_security_group.bastion.id]
+  private_ip = "10.0.1.252"
+  user_data = <<-EOF
+              #!/bin/bash
+              echo "${var.github_actions_public_key}" >> /home/ec2-user/.ssh/authorized_keys
+              yum update -y
+              yum install -y squid
+              sed -i '/http_access deny all/i acl my_network src 10.0.0.0/16\nhttp_access allow my_network' /etc/squid/squid.conf
+              systemctl enable squid
+              systemctl start squid
+            EOF
+}
+
+resource "aws_eip" "bastion_eip" {
+  domain = "vpc"
+}
+
+resource "aws_eip_association" "bastion_eip_assoc" {
+  instance_id   = aws_instance.bastion_host.id
+  allocation_id = aws_eip.bastion_eip.id
+}
+
 data "tls_certificate" "github" {
   url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
 }
@@ -376,20 +416,26 @@ resource "aws_iam_openid_connect_provider" "github_oidc" {
   thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
 }
 
-resource "aws_ssm_parameter" "ec2_instance_id" {
-  name  = "/simple_app/ec2_instance_id"
-  type  = "String"
-  value = aws_instance.app_server.id
-}
-
-resource "aws_ssm_parameter" "s3_bucket" {
-  name  = "/simple_app/s3_bucket"
-  type  = "String"
-  value = aws_s3_bucket.deployments_bucket.bucket
-}
-
 resource "aws_ssm_parameter" "region" {
   name  = "/simple_app/region"
   type  = "String"
   value = var.aws_region
+}
+
+resource "aws_ssm_parameter" "bastion_sg_id" {
+  name  = "/simple_app/bastion_sg_id"
+  type  = "String"
+  value = aws_security_group.bastion.id
+}
+
+resource "aws_ssm_parameter" "bastion_host_ip" {
+  name  = "/simple_app/bastion_host_ip"
+  type  = "String"
+  value = aws_instance.bastion_host.public_ip
+}
+
+resource "aws_ssm_parameter" "db_host" {
+  name  = "/simple_app/db_host"
+  type  = "String"
+  value = aws_db_instance.my_database.address
 }

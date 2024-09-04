@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.3.0...v1.4.0) (2024-09-04)
+
+
+### Features
+
+* third setup ([c248fb3](https://github.com/LucDelmon/the_simple_api_reboot/commit/c248fb31b8063045118746a2e48868e47ed2028d))
+
 # [1.3.0](https://github.com/LucDelmon/the_simple_api_reboot/compare/v1.2.6...v1.3.0) (2024-08-30)
 
 
